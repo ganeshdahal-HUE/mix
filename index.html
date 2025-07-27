@@ -1,11 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEARN IT - Grade 10 Challenge</title>
+    <title>Balen Scholarship Challenge</title>
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
@@ -13,14 +15,15 @@
             margin: 0;
             min-height: 100vh;
             background: linear-gradient(180deg, #1a1a3d, #4b0082);
-            overflow: hidden;
+            overflow-x: hidden;
             color: #fff;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: clamp(14px, 2.5vw, 16px);
         }
-        canvas#stars {
+        canvas#stars, canvas#particles {
             position: absolute;
             top: 0;
             left: 0;
@@ -30,11 +33,6 @@
             opacity: 0.8;
         }
         canvas#particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             z-index: -1;
             opacity: 0.6;
         }
@@ -52,16 +50,15 @@
             animation: fadeOut 1.5s ease 4s forwards;
         }
         .intro-text {
-            font-size: 6rem;
+            font-size: clamp(2rem, 8vw, 4rem);
             font-weight: 900;
             text-transform: uppercase;
             background: linear-gradient(45deg, #ff00ff, #00ffff, #ffcc00, #ff00ff);
             background-size: 400%;
             -webkit-background-clip: text;
             color: transparent;
-            text-shadow: 0 0 20px rgba(255, 0, 255, 0.8), 0 0 40px rgba(0, 255, 255, 0.8);
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
             animation: zoomPulse 2s ease-in-out infinite, colorShift 6s linear infinite;
-            letter-spacing: 5px;
         }
         @keyframes zoomPulse {
             0% { transform: scale(1); }
@@ -76,7 +73,7 @@
         @keyframes fadeOut {
             to { opacity: 0; visibility: hidden; }
         }
-        .name-prompt, .sound-prompt {
+        .rules-prompt, .name-prompt, .sound-prompt, .spin-container, .subscribe-prompt {
             position: fixed;
             top: 0;
             left: 0;
@@ -91,36 +88,49 @@
             visibility: hidden;
             transition: opacity 0.5s ease;
         }
-        .name-prompt.show, .sound-prompt.show {
+        .rules-prompt.show, .name-prompt.show, .sound-prompt.show, .spin-container.show, .subscribe-prompt.show {
             opacity: 1;
             visibility: visible;
         }
-        .name-container, .sound-container {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2rem;
+        .rules-container, .name-container, .sound-container, .spin-content, .subscribe-container {
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+            padding: clamp(1rem, 3vw, 2rem);
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
             backdrop-filter: blur(5px);
+            width: min(90%, 400px);
         }
-        .name-container h2, .sound-container h2 {
-            font-size: 2.5rem;
+        .rules-container h2 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            margin-bottom: 1rem;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        .rules-container ul {
+            text-align: left;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             margin-bottom: 1.5rem;
-            background: linear-gradient(90deg, #ff00ff, #00ffff);
-            -webkit-background-clip: text;
-            color: transparent;
+            padding-left: 1.5rem;
+        }
+        .rules-container li {
+            margin-bottom: 0.5rem;
+        }
+        .name-container h2, .sound-container h2, .subscribe-container h2 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: 1rem;
         }
         .name-container input {
             padding: 0.8rem;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             border-radius: 10px;
             border: 2px solid #00ffff;
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
             outline: none;
-            width: 200px;
+            width: min(80%, 200px);
         }
-        .name-container button, .sound-container button {
+        .name-container button, .sound-container button, .spin-btn, .proceed-btn, .rules-container button, .subscribe-container button {
             margin: 1rem;
             padding: 0.8rem 2rem;
             background: linear-gradient(45deg, #ff00ff, #00ffff);
@@ -128,20 +138,20 @@
             border: none;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             transition: all 0.3s ease;
         }
-        .name-container button:hover, .sound-container button:hover {
+        .name-container button:hover, .sound-container button:hover, .spin-btn:hover, .proceed-btn:hover, .rules-container button:hover, .subscribe-container button:hover {
             transform: scale(1.1);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
         }
         .quiz-container {
             position: relative;
             background: rgba(255, 255, 255, 0.15);
-            padding: 2.5rem;
+            padding: clamp(1.5rem, 4vw, 2.5rem);
             border-radius: 25px;
-            box-shadow: 0 0 40px rgba(255, 0, 255, 0.5), 0 0 60px rgba(0, 255, 255, 0.5);
-            width: 750px;
+            box-shadow: 0 0 40px rgba(255, 0, 255, 0.5);
+            width: min(90%, 750px);
             animation: slideIn 1s ease;
             backdrop-filter: blur(8px);
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -150,27 +160,25 @@
             from { transform: translateY(150px) rotateX(20deg); opacity: 0; }
             to { transform: translateY(0) rotateX(0); opacity: 1; }
         }
-        .youtube-link {
+        .youtube-link, .subscribe-link {
+            text Hawkins: 0;
             text-align: center;
             margin-bottom: 1.5rem;
-            font-size: 1.6rem;
-            font-weight: bold;
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
             color: #ffcc00;
             text-decoration: none;
             transition: all 0.3s ease;
-            text-shadow: 0 0 10px #ffcc00;
         }
-        .youtube-link:hover {
+        .youtube-link:hover, .subscribe-link:hover {
             color: #00ffff;
             transform: scale(1.1);
         }
         .headline {
-            font-size: 2.8rem;
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
             text-align: center;
             margin-bottom: 1rem;
-            text-transform: uppercase;
             color: #00FF00;
-            text-shadow: 0 0 15px rgba(0, 255, 0, 0.7), 0 0 25px rgba(0, 255, 0, 0.5);
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
         }
         .progress-container {
             margin: 1rem auto;
@@ -179,33 +187,19 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-            animation: pulseGlowBar 2s infinite;
         }
         .progress-bar {
             height: 20px;
             background: linear-gradient(90deg, #ff00ff, #00ffff);
             width: 0%;
             transition: width 0.5s ease;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
         }
-        @keyframes pulseGlowBar {
-            0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
-            100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
-        }
-        .progress-text {
+        .progress-text, .score-container {
             text-align: center;
             margin: 0.5rem 0;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             color: #fff;
             text-shadow: 0 0 5px #00ffff;
-        }
-        .score-container {
-            text-align: center;
-            margin: 0.5rem 0;
-            font-size: 1.5rem;
-            color: #fff;
-            text-shadow: 0 0 10px #ffcc00;
         }
         .timer-container {
             display: flex;
@@ -220,22 +214,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
             color: #fff;
-            text-shadow: 0 0 10px #ffcc00;
-            animation: countdown 15s linear forwards, rotateBorder 2s infinite;
+            animation: countdown 15s linear forwards;
         }
         .timer.low {
-            animation: countdown 15s linear forwards, rotateBorder 2s infinite, pulseTimer 0.5s infinite;
+            animation: countdown 15s linear forwards, pulseTimer 0.5s infinite;
         }
         @keyframes countdown {
             from { border-color: #ffcc00; }
             to { border-color: transparent; }
-        }
-        @keyframes rotateBorder {
-            0% { border-color: #ffcc00; }
-            50% { border-color: #00ffff; }
-            100% { border-color: #ffcc00; }
         }
         @keyframes pulseTimer {
             0% { transform: scale(1); }
@@ -243,29 +231,19 @@
             100% { transform: scale(1); }
         }
         .question {
-            font-size: 2.2rem;
+            font-size: clamp(1.5rem, 4vw, 2rem);
             margin-bottom: 2rem;
             font-weight: 700;
             color: #FFFF00;
             text-shadow: 0 0 8px rgba(255, 255, 0, 0.5);
-            animation: pulseTextGlow 2s infinite;
         }
         .question.bonus {
-            border: 3px solid #FFD700;
-            padding: 1rem;
-            border-radius: 10px;
-            background: rgba(255, 215, 0, 0.2);
+            color: #FFAA00;
+            text-shadow: 0 0 8px rgba(255, 170, 0, 0.7);
         }
-        .question.mystery {
-            border: 3px solid #800080;
-            padding: 1rem;
-            border-radius: 10px;
-            background: rgba(128, 0, 128, 0.2);
-        }
-        @keyframes pulseTextGlow {
-            0% { text-shadow: 0 0 8px rgba(255, 255, 0, 0.5); }
-            50% { text-shadow: 0 0 12px rgba(255, 255, 0, 0.8); }
-            100% { text-shadow: 0 0 8px rgba(255, 255, 0, 0.5); }
+        .question.revision {
+            color: #00FFFF;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
         }
         .options {
             display: flex;
@@ -279,60 +257,30 @@
             cursor: pointer;
             transition: all 0.4s ease;
             border: 3px solid #00ffff;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             color: #fff;
-            text-shadow: 0 0 5px #00ffff;
-            animation: optionFadeIn 0.5s ease;
-        }
-        @keyframes optionFadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         .option:hover {
-            transform: translateX(15px) scale(1.1) rotate(3deg);
+            transform: translateX(15px) scale(1.1);
             background: rgba(0, 255, 255, 0.4);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
-            border-radius: 20px;
-            animation: pulseGlow 1.5s infinite;
-        }
-        .option.clicked {
-            box-shadow: 0 0 15px #00ffff;
-        }
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.7); }
-            50% { box-shadow: 0 0 30px rgba(0, 255, 255, 1); }
-            100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.7); }
         }
         .option.correct {
             background: #00ff00;
             border-color: #00cc00;
-            animation: bounce 0.6s ease;
             box-shadow: 0 0 20px #00ff00;
         }
         .option.wrong {
             background: #ff3333;
             border-color: #cc0000;
-            animation: shake 0.6s ease;
             box-shadow: 0 0 20px #ff3333;
-        }
-        @keyframes bounce {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            20% { transform: translateX(-10px); }
-            40% { transform: translateX(10px); }
-            60% { transform: translateX(-10px); }
-            80% { transform: translateX(10px); }
-            100% { transform: translateX(0); }
         }
         .lifeline-container {
             display: flex;
             justify-content: center;
             gap: 1rem;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
         .lifeline-btn {
             padding: 0.8rem 1.5rem;
@@ -341,17 +289,13 @@
             border: none;
             border-radius: 15px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        .lifeline-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+            font-size: clamp(0.9rem, 2vw, 1rem);
         }
         .lifeline-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
+            background: linear-gradient(45deg, #666, #999);
+            filter: blur(2px);
         }
         .modal {
             position: fixed;
@@ -360,32 +304,24 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            display: none;
         }
         .modal.show {
             display: flex;
         }
         .modal-content {
             background: linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
-            padding: 2rem;
+            padding: clamp(1rem, 3vw, 2rem);
             border-radius: 15px;
             text-align: center;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            backdrop-filter: blur(5px);
-            border: 2px solid rgba(0, 255, 255, 0.7);
-            animation: modalGlow 2s infinite;
-        }
-        @keyframes modalGlow {
-            0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); transform: rotate(0deg); }
-            50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.8); transform: rotate(2deg); }
-            100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); transform: rotate(0deg); }
+            width: min(90%, 500px);
         }
         .modal-content p {
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
             color: #fff;
             margin-bottom: 1rem;
         }
@@ -396,35 +332,15 @@
             border: none;
             border-radius: 15px;
             cursor: pointer;
-            font-size: 1.2rem;
         }
-        .modal-content button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
-        }
-        .description {
+        .description, .motivational-quote {
             margin-top: 1.5rem;
             padding: 1.2rem;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 15px;
-            font-size: 1.1rem;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
             color: #fff;
             display: none;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-            border: 2px solid transparent;
-            background: linear-gradient(45deg, #ff00ff, #00ffff);
-            background-clip: border-box;
-        }
-        .motivational-quote {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(0, 255, 255, 0.2);
-            border-radius: 10px;
-            font-size: 1.2rem;
-            color: #00ffff;
-            text-align: center;
-            text-shadow: 0 0 10px #00ffff;
-            animation: fadeIn 1s ease;
         }
         .time-up {
             position: absolute;
@@ -432,116 +348,95 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(255, 0, 0, 0.85);
-            padding: 1.5rem 3rem;
+            padding: 1.5rem;
             border-radius: 15px;
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: clamp(1.5rem, 4vw, 2rem);
             color: #fff;
-            text-shadow: 0 0 15px #ff00ff, 0 0 25px #ff00ff;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
-            animation: glow 1.5s infinite;
             display: none;
             z-index: 10;
         }
-        @keyframes glow {
-            0% { text-shadow: 0 0 15px #ff00ff, 0 0 25px #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
-            50% { text-shadow: 0 0 25px #ff00ff, 0 0 35px #ff00ff; box-shadow: 0 0 40px rgba(255, 0, 0, 1); }
-            100% { text-shadow: 0 0 15px #ff00ff, 0 0 25px #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
-        }
-        .subscribe-prompt {
-            text-align: center;
-            font-size: 1.8rem;
-            color: #fff;
-            margin: 2.5rem 0;
-            text-shadow: 0 0 10px #ffcc00;
-        }
-        .subscribe-link {
-            color: #ffcc00;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-shadow: 0 0 10px #ffcc00;
-        }
-        .subscribe-link:hover {
-            color: #00ffff;
-            transform: scale(1.1);
-        }
-        .next-btn {
+        .next-btn, .subscribe-btn, .play-another-btn, .facebook-btn {
             margin: 1rem auto;
-            padding: 1rem 2.5rem;
+            padding: 1rem 2rem;
             background: linear-gradient(45deg, #ff00ff, #00ffff);
             color: #fff;
             border: none;
             border-radius: 30px;
             cursor: pointer;
-            font-size: 1.3rem;
-            transition: all 0.4s ease;
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
             display: block;
         }
-        .next-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.9);
+        .facebook-btn {
+            background: linear-gradient(45deg, #3b5998, #8b9dc3);
         }
-        .result {
+        .play-another-btn {
+            background: linear-gradient(45deg, #00ff00, #66ff66);
+        }
+        .result, .congrats-message {
             text-align: center;
-            font-size: 1.8rem;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
             color: #fff;
             margin: 1.5rem 0;
-            text-shadow: 0 0 10px #fff;
-        }
-        .congrats-message {
-            text-align: center;
-            font-size: 2rem;
-            margin: 1rem 0;
-            color: #00ffff;
-            text-shadow: 0 0 15px #00ffff;
-            animation: pulseGlowText 2s infinite;
-        }
-        @keyframes pulseGlowText {
-            0% { text-shadow: 0 0 10px #00ffff; }
-            50% { text-shadow: 0 0 20px #00ffff; }
-            100% { text-shadow: 0 0 10px #00ffff; }
         }
         .quote {
             font-style: italic;
             color: #ffcc00;
             margin-top: 1.5rem;
-            font-size: 1.4rem;
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
             text-align: center;
-            text-shadow: 0 0 10px #ffcc00;
         }
-        .subscribe-btn, .play-another-btn, .facebook-btn {
-            margin: 1rem;
-            padding: 1rem 2.5rem;
-            background: linear-gradient(45deg, #ff0000, #ff6666);
+        .spin-container {
+            flex-direction: column;
+            text-align: center;
+        }
+        .spin-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .wheel {
+            width: min(300px, 80vw);
+            height: min(300px, 80vw);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 6px solid #e0e0e0;
+            background: conic-gradient(
+                #ff4444 0% 15%, #44ff44 15% 30%, #4444ff 30% 55%,
+                #ffaa44 55% 65%, #aa44ff 65% 100%
+            );
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .wheel::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 30px solid transparent;
+            border-bottom-color: #e0e0e0;
+        }
+        .wheel-label span {
+            position: absolute;
+            font-size: clamp(0.7rem, 2vw, 0.9rem);
+            font-weight: bold;
             color: #fff;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 1.3rem;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.4s ease;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            transform: rotate(var(--angle)) translate(120px) rotate(90deg);
+            text-align: center;
+            width: 80px;
         }
-        .facebook-btn {
-            background: linear-gradient(45deg, #3b5998, #8b9dc3);
-            box-shadow: 0 0 20px rgba(59, 89, 152, 0.7);
+        .spin-result {
+            margin: 1rem 0;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            color: #00ffff;
+            min-height: 2rem;
         }
-        .play-another-btn {
-            background: linear-gradient(45deg, #00ff00, #66ff66);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
-        }
-        .subscribe-btn:hover, .play-another-btn:hover, .facebook-btn:hover {
-            transform: scale(1.1) rotate(5deg);
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.9);
-        }
-        .facebook-btn:hover {
-            box-shadow: 0 0 30px rgba(59, 89, 152, 0.9);
-        }
-        .play-another-btn:hover {
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.9);
+        .footer {
+            text-align: center;
+            font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+            color: #fff;
+            margin-top: 2rem;
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -549,13 +444,27 @@
     <canvas id="stars"></canvas>
     <canvas id="particles"></canvas>
     <div class="intro">
-        <div class="intro-text">LEARN IT</div>
+        <div class="intro-text">Balen Scholarship</div>
+    </div>
+    <div class="rules-prompt" id="rulesPrompt">
+        <div class="rules-container">
+            <h2>Welcome to the Challenge!</h2>
+            <ul>
+                <li>Spin the wheel to determine your quiz type.</li>
+                <li>Answer questions within 15 seconds each.</li>
+                <li>Regular questions: 1 point, Bonus: 3 points.</li>
+                <li>Lifelines (50-50, Poll, Phone) are available for regular questions only.</li>
+                <li>Answer 3 revision questions, get 2 correct in a row to win!</li>
+                <li>Subscribe to our YouTube channel to start.</li>
+            </ul>
+            <button onclick="showNamePrompt()">Start Playing</button>
+        </div>
     </div>
     <div class="name-prompt" id="namePrompt">
         <div class="name-container">
             <h2>What's Your Name?</h2>
-            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-            <button onclick="validateName()">Start Quiz</button>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20" aria-label="Player name">
+            <button onclick="validateName()">Next</button>
         </div>
     </div>
     <div class="sound-prompt" id="soundPrompt">
@@ -565,703 +474,1034 @@
             <button onclick="startQuiz(false)">Play without Sound</button>
         </div>
     </div>
-    <div class="quiz-container" id="quizContainer" style="display: none;">
-        <a href="https://www.youtube.com/@learnperfectly1" target="_blank" class="youtube-link">YouTube: @learnperfectly1</a>
-        <div class="headline">LEARN IT - Grade 10 Challenge</div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-        <div class="progress-text" id="progressText">Question 1/30</div>
-        <div class="score-container" id="scoreDisplay">Score: 0/34</div>
-        <div class="lifeline-container">
-            <button class="lifeline-btn" id="fiftyFifty">50-50</button>
-            <button class="lifeline-btn" id="audiencePoll">Audience Poll</button>
-            <button class="lifeline-btn" id="phoneFriend">Phone a Friend</button>
-        </div>
-        <div class="timer-container">
-            <div class="timer" id="timer">15</div>
-        </div>
-        <div class="question" id="question"></div>
-        <div class="options" id="options"></div>
-        <div class="description" id="description"></div>
-        <div class="motivational-quote" id="motivationalQuote"></div>
-        <div class="time-up" id="timeUp">Time Up!<br>Correct Answer: <span id="correctAnswer"></span></div>
-        <button class="next-btn" id="nextBtn" style="display: none;">Next Question</button>
-        <div class="modal" id="pollModal">
-            <div class="modal-content">
-                <canvas id="pollChart" width="400" height="200"></canvas>
-                <button id="closePoll">Close</button>
+    <div class="spin-container" id="spinWheel" role="dialog" aria-label="Spin wheel">
+        <div class="spin-content">
+            <div class="wheel" id="wheel">
+                <div class="wheel-label">
+                    <span style="--angle: 0deg;">1 Bonus</span>
+                    <span style="--angle: 72deg;">2 Bonus</span>
+                    <span style="--angle: 144deg;">No Bonus</span>
+                    <span style="--angle: 216deg;">No Quiz</span>
+                    <span style="--angle: 288deg;">Simple Quiz</span>
+                </div>
             </div>
-        </div>
-        <div class="modal" id="phoneModal">
-            <div class="modal-content">
-                <p>Calling: Ganesh</p>
-                <p id="phoneText"></p>
-                <button id="closePhone">Close</button>
-            </div>
+            <button class="spin-btn" id="spinBtn" aria-label="Spin the wheel">Spin!</button>
+            <div class="spin-result" id="spinResult" aria-live="polite"></div>
+            <button class="proceed-btn" id="proceedBtn" style="display: none;" aria-label="Proceed">Proceed</button>
         </div>
     </div>
-
-    <audio id="backgroundMusic" loop>
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
-    </audio>
-    <audio id="clickSound">
-        <source src="https://www.myinstants.com/media/sounds/click.mp3" type="audio/mp3">
-    </audio>
-    <audio id="correctSound">
-        <source src="https://www.myinstants.com/media/sounds/correct.mp3" type="audio/mp3">
-    </audio>
-    <audio id="wrongSound">
-        <source src="https://www.myinstants.com/media/sounds/wrong.mp3" type="audio/mp3">
-    </audio>
-    <audio id="victorySound">
-        <source src="https://www.myinstants.com/media/sounds/victory.mp3" type="audio/mp3">
-    </audio>
-
-    <script>
-        // Starry Background Animation
-        const starCanvas = document.getElementById('stars');
-        const starCtx = starCanvas.getContext('2d');
-        starCanvas.width = window.innerWidth;
-        starCanvas.height = window.innerHeight;
-        const stars = [];
-        for (let i = 0; i < 200; i++) {
-            stars.push({
-                x: Math.random() * starCanvas.width,
-                y: Math.random() * starCanvas.height,
-                radius: Math.random() * 1.5 + 0.5,
-                opacity: Math.random(),
-                speed: Math.random() * 0.05 + 0.02
-            });
-        }
-        function drawStars() {
-            starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
-            stars.forEach(star => {
-                starCtx.beginPath();
-                starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-                starCtx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-                starCtx.fill();
-                star.opacity += star.speed;
-                if (star.opacity > 1 || star.opacity < 0) star.speed *= -1;
-            });
-            requestAnimationFrame(drawStars);
-        }
-        drawStars();
-
-        // Particle Animation
-        const particleCanvas = document.getElementById('particles');
-        const particleCtx = particleCanvas.getContext('2d');
-        particleCanvas.width = window.innerWidth;
-        particleCanvas.height = window.innerHeight;
-        const particleArray = [];
-        for (let i = 0; i < 150; i++) {
-            particleArray.push({
-                x: Math.random() * particleCanvas.width,
-                y: Math.random() * particleCanvas.height,
-                radius: Math.random() * 4 + 1,
-                speedX: Math.random() * 2 - 1,
-                speedY: Math.random() * 2 - 1,
-                color: `hsl(${Math.random() * 360}, 100%, 50%)`
-            });
-        }
-        function drawParticles(correctAnswer = false, isMystery = false) {
-            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-            particleArray.forEach(particle => {
-                particleCtx.beginPath();
-                particleCtx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                particleCtx.fillStyle = correctAnswer ? '#00ff00' : (isMystery ? '#800080' : particle.color);
-                particleCtx.fill();
-                particle.x += particle.speedX;
-                particle.y += particle.speedY;
-                if (particle.x < 0 || particle.x > particleCanvas.width) particle.speedX *= -1;
-                if (particle.y < 0 || particle.y > particleCanvas.height) particle.speedY *= -1;
-            });
-            requestAnimationFrame(() => drawParticles(correctAnswer, isMystery));
-        }
-        drawParticles();
-
-        // Audio Elements
-        const bgMusic = document.getElementById('backgroundMusic');
-        const clickAudio = document.getElementById('clickSound');
-        const correctAudio = document.getElementById('correctSound');
-        const wrongAudio = document.getElementById('wrongSound');
-        const victoryAudio = document.getElementById('victorySound');
-
-        let soundEnabled = false;
-        let playerName = '';
-        let currentIndex = 0;
-        let userScore = 0;
-        let countdownTimer;
-        let pollChart = null;
-        let timePerQuestion = 15;
-        const halfwayPoint = 15;
-        let lifelines = { fifty: true, poll: true, phone: true };
-        let shuffledQuestions = [];
-        let bonusCount = 0;
-        let mysteryCount = 0;
-        let isBonus = false;
-        let isMystery = false;
-
-        bgMusic.volume = 0.1;
-        clickAudio.volume = 1.0;
-        correctAudio.volume = 1.0;
-        wrongAudio.volume = 1.0;
-        victoryAudio.volume = 1.0;
-
-        const quizBox = document.getElementById('quizContainer');
-        let questionText, optionList, answerDescription, motivationalQuote, timeUpBox, correctAnswerText, nextButton, timerDisplay, progressBar, progressText, scoreDisplay;
-
-        // Motivational Quotes (Mixed Science, English, Math)
-        const motivationalQuotes = [
-            "Your mind solves equations and sentences with brilliance!",
-            "You're sparking discoveries in science and words!",
-            "Every answer is a step toward mastering knowledge!",
-            "Your skills shine like a perfectly balanced equation!",
-            "You're navigating science, math, and English like a pro!",
-            "Your curiosity is the key to unlocking the universe!",
-            "You're crafting knowledge with the precision of algebra!",
-            "Your answers flow like a well-written story!",
-            "You're accelerating through learning like a physics star!",
-            "Your brain is a powerhouse of ideas and solutions!"
-        ];
-
-        // Quiz Questions
-        const questions = [
-            // Physics (5)
-            { question: "What is the formula for force according to Newton’s second law?", options: ["F = ma", "F = mv", "F = m/a", "F = m + a"], correct: "F = ma", description: "Force equals mass times acceleration (F = ma), per Newton’s second law." },
-            { question: "What is the unit of electric current?", options: ["Volt", "Ampere", "Ohm", "Watt"], correct: "Ampere", description: "The ampere is the SI unit of electric current, measuring the flow of charge." },
-            { question: "What type of lens converges light rays?", options: ["Concave", "Convex", "Plano-concave", "Biconcave"], correct: "Convex", description: "Convex lenses converge light rays to a focal point, used in magnifying glasses." },
-            { question: "What is the acceleration due to gravity on Earth?", options: ["9.8 m/s²", "8.9 m/s²", "10.8 m/s²", "7.8 m/s²"], correct: "9.8 m/s²", description: "Earth’s gravitational acceleration is approximately 9.8 m/s², pulling objects downward." },
-            { question: "What is the formula for kinetic energy?", options: ["KE = mv²", "KE = ½ mv²", "KE = mv", "KE = ½ mv"], correct: "KE = ½ mv²", description: "Kinetic energy is calculated as half the mass times velocity squared (KE = ½ mv²)." },
-            // Chemistry (5)
-            { question: "What is the chemical formula for water?", options: ["H₂O", "CO₂", "NaCl", "O₂"], correct: "H₂O", description: "Water is a compound with the formula H₂O, consisting of two hydrogen atoms and one oxygen atom." },
-            { question: "Which gas is produced when an acid reacts with a metal?", options: ["Oxygen", "Hydrogen", "Carbon dioxide", "Nitrogen"], correct: "Hydrogen", description: "Acids react with metals to produce hydrogen gas and a salt." },
-            { question: "What is the pH of a neutral solution?", options: ["Less than 7", "Equal to 7", "Greater than 7", "Equal to 14"], correct: "Equal to 7", description: "A neutral solution, like pure water, has a pH of 7." },
-            { question: "Which element has the atomic number 6?", options: ["Nitrogen", "Carbon", "Oxygen", "Boron"], correct: "Carbon", description: "Carbon has an atomic number of 6, indicating six protons in its nucleus." },
-            { question: "What type of reaction is 2H₂ + O₂ → 2H₂O?", options: ["Decomposition", "Synthesis", "Displacement", "Neutralization"], correct: "Synthesis", description: "A synthesis reaction combines reactants to form a single product, like water formation." },
-            // Biology (5)
-            { question: "What is the powerhouse of the cell?", options: ["Nucleus", "Mitochondria", "Ribosome", "Golgi body"], correct: "Mitochondria", description: "Mitochondria produce ATP, the cell’s energy currency, through cellular respiration." },
-            { question: "Which gas do plants release during photosynthesis?", options: ["Carbon dioxide", "Oxygen", "Nitrogen", "Hydrogen"], correct: "Oxygen", description: "Plants release oxygen as a byproduct of photosynthesis, using sunlight to convert CO₂ and water." },
-            { question: "What is the largest organ in the human body?", options: ["Liver", "Skin", "Heart", "Brain"], correct: "Skin", description: "The skin is the largest organ, protecting the body and regulating temperature." },
-            { question: "What is the basic unit of life?", options: ["Tissue", "Organ", "Cell", "System"], correct: "Cell", description: "The cell is the smallest unit of life, performing all essential functions." },
-            { question: "Which organism is a producer in a food chain?", options: ["Lion", "Grass", "Hawk", "Snake"], correct: "Grass", description: "Producers, like grass, make their own food through photosynthesis." },
-            // English (8)
-            { question: "What is the synonym of 'happy'?", options: ["Sad", "Joyful", "Angry", "Tired"], correct: "Joyful", description: "A synonym of 'happy' is 'joyful,' meaning full of joy or delight." },
-            { question: "Which sentence is grammatically correct?", options: ["She don’t like to read.", "She doesn’t like to read.", "She not like to read.", "She liking to read."], correct: "She doesn’t like to read.", description: "The correct form uses 'doesn’t' for third-person singular in the negative." },
-            { question: "What is the antonym of 'big'?", options: ["Large", "Small", "Huge", "Great"], correct: "Small", description: "An antonym of 'big' is 'small,' indicating a lesser size." },
-            { question: "What is the plural form of 'child'?", options: ["Childs", "Children", "Childes", "Childrens"], correct: "Children", description: "The plural of 'child' is 'children,' an irregular plural form." },
-            { question: "Which word is a noun?", options: ["Run", "Quickly", "Book", "Fast"], correct: "Book", description: "A noun, like 'book,' names a person, place, or thing." },
-            { question: "What is the past tense of 'go'?", options: ["Goed", "Gone", "Went", "Going"], correct: "Went", description: "The past tense of 'go' is 'went,' an irregular verb form." },
-            { question: "Which is a correctly punctuated sentence?", options: ["I have two cats, they are fluffy.", "I have two cats they are fluffy.", "I have two cats; they are fluffy.", "I have two cats they are fluffy"], correct: "I have two cats; they are fluffy.", description: "A semicolon correctly joins two independent clauses." },
-            { question: "What does 'metaphor' mean in literature?", options: ["A direct comparison", "A rhyme scheme", "A type of verb", "A repeated sound"], correct: "A direct comparison", description: "A metaphor compares two unlike things directly, e.g., 'Time is a thief.'" },
-            // Mathematics (7)
-            { question: "What is the solution to the equation 2x + 3 = 7?", options: ["x = 1", "x = 2", "x = 3", "x = 4"], correct: "x = 2", description: "Solving 2x + 3 = 7: Subtract 3 (2x = 4), then divide by 2 (x = 2)." },
-            { question: "What is the area of a triangle with base 6 cm and height 4 cm?", options: ["12 cm²", "24 cm²", "10 cm²", "18 cm²"], correct: "12 cm²", description: "The area of a triangle is (1/2) × base × height = (1/2) × 6 × 4 = 12 cm²." },
-            { question: "What is the value of sin(30°)?", options: ["1/2", "√3/2", "1", "0"], correct: "1/2", description: "The sine of 30° is 1/2, based on the 30-60-90 triangle ratios." },
-            { question: "What is the Pythagorean theorem?", options: ["a² + b² = c²", "a² - b² = c²", "a + b = c", "a/b = c"], correct: "a² + b² = c²", description: "For a right triangle, a² + b² = c², where c is the hypotenuse." },
-            { question: "What is the slope of the line y = 3x + 2?", options: ["2", "3", "1", "-3"], correct: "3", description: "In y = mx + b, the slope m is 3." },
-            { question: "What is the value of 2³?", options: ["6", "8", "12", "16"], correct: "8", description: "2³ means 2 × 2 × 2 = 8." },
-            { question: "How many sides does a hexagon have?", options: ["5", "6", "7", "8"], correct: "6", description: "A hexagon is a polygon with six sides." }
-        ];
-
-        // Bonus and Mystery Questions
-        const bonusQuestions = [
-            { question: "What is the slope of the line y = 2x + 3?", options: ["2", "3", "-2", "1"], correct: "2", description: "In y = mx + b, the slope m is 2 for the line y = 2x + 3." },
-            { question: "Which scientist proposed the theory of relativity?", options: ["Newton", "Einstein", "Galileo", "Curie"], correct: "Einstein", description: "Albert Einstein proposed the theory of relativity, revolutionizing physics." }
-        ];
-        const mysteryQuestions = [
-            { question: "What is the synonym of 'big'?", options: ["Small", "Large", "Tiny", "Short"], correct: "Large", description: "A synonym of 'big' is 'large,' indicating great size." },
-            { question: "What is the chemical symbol for gold?", options: ["Au", "Ag", "Fe", "Cu"], correct: "Au", description: "Gold’s chemical symbol is Au, derived from its Latin name 'aurum.'" },
-            { question: "What is the value of π (pi) approximately?", options: ["2.14", "3.14", "4.14", "5.14"], correct: "3.14", description: "Pi (π) is approximately 3.14, used in calculations involving circles." }
-        ];
-
-        // Shuffle Array Function
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        // Show Name Prompt After Intro
-        setTimeout(() => {
-            document.getElementById('namePrompt').classList.add('show');
-        }, 4500);
-
-        function validateName() {
-            playerName = document.getElementById('playerName').value.trim();
-            if (playerName.length < 4) {
-                alert('Please enter a name with 4 or more letters.');
-                return;
-            }
-            document.getElementById('namePrompt').classList.remove('show');
-            document.getElementById('soundPrompt').classList.add('show');
-        }
-
-        function startQuiz(enableSound) {
-            soundEnabled = enableSound;
-            if (!soundEnabled) {
-                bgMusic.muted = true;
-                clickAudio.muted = true;
-                correctAudio.muted = true;
-                wrongAudio.muted = true;
-                victoryAudio.muted = true;
-            }
-            if (soundEnabled) {
-                bgMusic.play().then(() => console.log("Background music playing")).catch(err => console.error("Background music failed:", err));
-            }
-            document.getElementById('soundPrompt').classList.remove('show');
-            document.getElementById('quizContainer').style.display = 'block';
-            shuffledQuestions = shuffleArray([...questions]);
-            quizBox.innerHTML = `
-                <a href="https://www.youtube.com/@learnperfectly1" target="_blank" class="youtube-link">YouTube: @learnperfectly1</a>
-                <div class="headline">LEARN IT - Grade 10 Challenge</div>
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                <div class="progress-text" id="progressText">Question 1/${shuffledQuestions.length}</div>
-                <div class="score-container" id="scoreDisplay">Score: 0/34</div>
-                <div class="lifeline-container">
-                    <button class="lifeline-btn" id="fiftyFifty">50-50</button>
-                    <button class="lifeline-btn" id="audiencePoll">Audience Poll</button>
-                    <button class="lifeline-btn" id="phoneFriend">Phone a Friend</button>
-                </div>
-                <div class="timer-container">
-                    <div class="timer" id="timer">15</div>
-                </div>
-                <div class="question" id="question"></div>
-                <div class="options" id="options"></div>
-                <div class="description" id="description"></div>
-                <div class="motivational-quote" id="motivationalQuote"></div>
-                <div class="time-up" id="timeUp">Time Up!<br>Correct Answer: <span id="correctAnswer"></span></div>
-                <button class="next-btn" id="nextBtn" style="display: none;">Next Question</button>
-                <div class="modal" id="pollModal">
-                    <div class="modal-content">
-                        <canvas id="pollChart" width="400" height="200"></canvas>
-                        <button id="closePoll">Close</button>
-                    </div>
-                </div>
-                <div class="modal" id="phoneModal">
-                    <div class="modal-content">
-                        <p>Calling: Ganesh</p>
-                        <p id="phoneText"></p>
-                        <button id="closePhone">Close</button>
-                    </div>
-                </div>
-            `;
-            initializeQuiz();
-            displayQuestion();
-        }
-
-        function initializeQuiz() {
-            questionText = document.getElementById('question');
-            optionList = document.getElementById('options');
-            answerDescription = document.getElementById('description');
-            motivationalQuote = document.getElementById('motivationalQuote');
-            timeUpBox = document.getElementById('timeUp');
-            correctAnswerText = document.getElementById('correctAnswer');
-            nextButton = document.getElementById('nextBtn');
-            timerDisplay = document.getElementById('timer');
-            progressBar = document.getElementById('progressBar');
-            progressText = document.getElementById('progressText');
-            scoreDisplay = document.getElementById('scoreDisplay');
-            nextButton.addEventListener('click', proceedToNext);
-            document.getElementById('fiftyFifty').addEventListener('click', useFiftyFifty);
-            document.getElementById('audiencePoll').addEventListener('click', useAudiencePoll);
-            document.getElementById('phoneFriend').addEventListener('click', usePhoneFriend);
-            document.getElementById('closePoll').addEventListener('click', () => {
-                document.getElementById('pollModal').classList.remove('show');
-            });
-            document.getElementById('closePhone').addEventListener('click', () => {
-                document.getElementById('phoneModal').classList.remove('show');
-            });
-        }
-
-        function startCountdown() {
-            let timeLeft = timePerQuestion;
-            timerDisplay.textContent = timeLeft;
-            countdownTimer = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = timeLeft;
-                if (timeLeft <= 5) {
-                    timerDisplay.classList.add('low');
-                } else {
-                    timerDisplay.classList.remove('low');
-                }
-                if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
-                    showTimeUp();
-                }
-            }, 1000);
-        }
-
-        function updateProgressAndScore() {
-            const progressPercentage = ((currentIndex + 1) / shuffledQuestions.length) * 100;
-            gsap.to(progressBar, { width: progressPercentage + '%', duration: 0.8, ease: 'power2.out' });
-            progressText.textContent = `Question ${currentIndex + 1}/${shuffledQuestions.length}`;
-            scoreDisplay.innerHTML = `Score: ${userScore}/34${userScore > 30 ? ' <span style="color: #FFD700">(+Bonus)</span>' : ''}`;
-            gsap.to(scoreDisplay, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1 });
-        }
-
-        function displayQuestion() {
-            clearInterval(countdownTimer);
-            timeUpBox.style.display = 'none';
-            document.getElementById('pollModal').classList.remove('show');
-            document.getElementById('phoneModal').classList.remove('show');
-            if (pollChart) {
-                pollChart.destroy();
-                pollChart = null;
-            }
-
-            isBonus = false;
-            isMystery = false;
-            timePerQuestion = 15;
-            questionText.classList.remove('bonus', 'mystery');
-
-            // Check for Bonus Round (10% chance at specific questions, max 2)
-            const bonusTriggers = [5, 10, 15, 20, 25];
-            if (bonusTriggers.includes(currentIndex) && bonusCount < 2 && Math.random() < 0.1) {
-                isBonus = true;
-                timePerQuestion = 20;
-                bonusCount++;
-            }
-
-            // Check for Mystery Question (15% chance, max 3, not on bonus)
-            if (!isBonus && mysteryCount < 3 && Math.random() < 0.15) {
-                isMystery = true;
-                mysteryCount++;
-            }
-
-            let currentData;
-            if (isBonus) {
-                currentData = bonusQuestions[bonusCount - 1];
-                questionText.innerHTML = `<span style="color: #FFD700">Bonus Round! (Double Points)</span><br>${currentData.question}`;
-                questionText.classList.add('bonus');
-                confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#FFD700', '#FFCC00'],
-                    duration: 2000
+    <div class="subscribe-prompt" id="subscribePrompt">
+        <div class="subscribe-container">
+            <h2>Subscribe to Continue!</h2>
+            <p>Please subscribe to our YouTube channel to start the quiz.</p>
+            <a href="https://www.youtube.com/@balenscholarship" target="_blank" class="youtube-link">Subscribe Now</a>
+            <button onclick="startQuizAfterSubscribe()">I've Subscribed</button>
+        </div>
+    </div>
+    <div class="quiz-container" id="quizContainer" style="display: none;">
+        <audio id="backgroundMusic" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
+        </audio>
+        <audio id="clickSound">
+            <source src="https://www.myinstants.com/media/sounds/click.mp3" type="audio/mp3">
+        </audio>
+        <audio id="correctSound">
+            <source src="https://www.myinstants.com/media/sounds/correct.mp3" type="audio/mp3">
+        </audio>
+        <audio id="wrongSound">
+            <source src="https://www.myinstants.com/media/sounds/wrong.mp3" type="audio/mp3">
+        </audio>
+        <audio id="victorySound">
+            <source src="https://www.myinstants.com/media/sounds/victory.mp3" type="audio/mp3">
+        </audio>
+        <audio id="spinSound">
+            <source src="https://freesound.org/data/previews/145/145434_2514848-lq.mp3" type="audio/mp3">
+        </audio>
+        <script>
+            // Canvas animations
+            const starCanvas = document.getElementById('stars');
+            const starCtx = starCanvas.getContext('2d');
+            starCanvas.width = window.innerWidth;
+            starCanvas.height = window.innerHeight;
+            const stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * starCanvas.width,
+                    y: Math.random() * starCanvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    opacity: Math.random(),
+                    speed: Math.random() * 0.05 + 0.02
                 });
-            } else if (isMystery) {
-                currentData = mysteryQuestions[mysteryCount - 1];
-                questionText.innerHTML = `<span style="color: #800080">Mystery Question!</span><br>${currentData.question}`;
-                questionText.classList.add('mystery');
-                for (let i = 0; i < 50; i++) {
-                    particleArray.push({
-                        x: particleCanvas.width / 2,
-                        y: particleCanvas.height / 2,
-                        radius: Math.random() * 4 + 1,
-                        speedX: Math.random() * 8 - 4,
-                        speedY: Math.random() * 8 - 4,
-                        color: '#800080'
-                    });
+            }
+            function drawStars() {
+                starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+                stars.forEach(star => {
+                    starCtx.beginPath();
+                    starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    starCtx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                    starCtx.fill();
+                    starCtx.closePath();
+                    star.opacity += star.speed;
+                    if (star.opacity > 1 || star.opacity < 0) star.speed *= -1;
+                });
+                requestAnimationFrame(drawStars);
+            }
+            drawStars();
+
+            const particleCanvas = document.getElementById('particles');
+            const particleCtx = particleCanvas.getContext('2d');
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+            const particleArray = [];
+            for (let i = 0; i < 50; i++) {
+                particleArray.push({
+                    x: Math.random() * particleCanvas.width,
+                    y: Math.random() * particleCanvas.height,
+                    radius: Math.random() * 4 + 1,
+                    speedX: Math.random() * 2 - 1,
+                    speedY: Math.random() * 2 - 1,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`
+                });
+            }
+            function drawParticles(correctAnswer = false) {
+                particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+                particleArray.forEach(particle => {
+                    particleCtx.beginPath();
+                    particleCtx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    particleCtx.fillStyle = correctAnswer ? '#00ff00' : particle.color;
+                    particleCtx.fill();
+                    particleCtx.closePath();
+                    particle.x += particle.speedX;
+                    particle.y += particle.speedY;
+                    if (particle.x < 0 || particle.x > particleCanvas.width) particle.speedX *= -1;
+                    if (particle.y < 0 || particle.y > particleCanvas.height) particle.speedY *= -1;
+                });
+                requestAnimationFrame(() => drawParticles(correctAnswer));
+            }
+            drawParticles();
+
+            // Audio elements
+            const bgMusic = document.getElementById('backgroundMusic');
+            const clickAudio = document.getElementById('clickSound');
+            const correctAudio = document.getElementById('correctSound');
+            const wrongAudio = document.getElementById('wrongSound');
+            const victoryAudio = document.getElementById('victorySound');
+            const spinAudio = document.getElementById('spinSound');
+
+            // State variables
+            let soundEnabled = false;
+            let playerName = '';
+            let currentIndex = 0;
+            let userScore = 0;
+            let totalPossibleScore = 25;
+            let countdownTimer;
+            let pollChart = null;
+            let timePerQuestion = 15;
+            const halfwayPoint = 13;
+            let lifelines = { fifty: false, poll: false, phone: false };
+            let shuffledQuestions = [];
+            let revisionQuestions = [];
+            let isSpinning = false;
+            let spinOutcome = '';
+            let bonusQuestions = 0;
+            let isRevisionPhase = false;
+            let revisionIndex = 0;
+            let hasExtraSpin = true;
+            let consecutiveCorrect = 0;
+            let playedQuestions = [];
+
+            // Audio volume settings
+            bgMusic.volume = 0.1;
+            clickAudio.volume = 1.0;
+            correctAudio.volume = 1.0;
+            wrongAudio.volume = 1.0;
+            victoryAudio.volume = 1.0;
+            spinAudio.volume = 1.0;
+
+            // DOM elements
+            const quizBox = document.getElementById('quizContainer');
+            const elements = {
+                wheel: document.getElementById('wheel'),
+                spinBtn: document.getElementById('spinBtn'),
+                spinResult: document.getElementById('spinResult'),
+                proceedBtn: document.getElementById('proceedBtn'),
+                spinWheel: document.getElementById('spinWheel'),
+                namePrompt: document.getElementById('namePrompt'),
+                playerNameInput: document.getElementById('playerName')
+            };
+
+            // Spin wheel configuration
+            const CONFIG = {
+                SPIN_OUTCOMES: [
+                    { name: '1 Bonus Question', probability: 0.15, degrees: 36 },
+                    { name: '2 Bonus Questions', probability: 0.15, degrees: 108 },
+                    { name: 'No Bonus', probability: 0.25, degrees: 180 },
+                    { name: 'No Quiz', probability: 0.10, degrees: 252 },
+                    { name: 'Simple Quiz', probability: 0.35, degrees: 324 }
+                ]
+            };
+
+            // Motivational quotes
+            const motivationalQuotes = [
+                "Your knowledge is your ticket to success!",
+                "Master these questions, win the scholarship!",
+                "You're one step closer to your dreams!",
+                "Your hard work is shining through!",
+                "Keep learning, keep achieving!"
+            ];
+
+            // Question bank (Set 3)
+           const questions = [
+    // Physics (5)
+    {
+        subject: "Physics",
+        question: "What is the formula for force according to Newton’s second law?",
+        options: ["F = ma", "F = mv", "F = m/a", "F = m + a"],
+        correct: "F = ma",
+        description: "Force equals mass times acceleration (F = ma), per Newton’s second law.",
+        isBonus: false
+    },
+    {
+        subject: "Physics",
+        question: "What is the unit of electric current?",
+        options: ["Volt", "Ampere", "Ohm", "Watt"],
+        correct: "Ampere",
+        description: "The ampere is the SI unit of electric current, measuring the flow of charge.",
+        isBonus: false
+    },
+    {
+        subject: "Physics",
+        question: "What type of lens converges light rays?",
+        options: ["Concave", "Convex", "Plano-concave", "Biconcave"],
+        correct: "Convex",
+        description: "Convex lenses converge light rays to a focal point, used in magnifying glasses.",
+        isBonus: false
+    },
+    {
+        subject: "Physics",
+        question: "What is the acceleration due to gravity on Earth?",
+        options: ["9.8 m/s²", "8.9 m/s²", "10.8 m/s²", "7.8 m/s²"],
+        correct: "9.8 m/s²",
+        description: "Earth’s gravitational acceleration is approximately 9.8 m/s², pulling objects downward.",
+        isBonus: false
+    },
+    {
+        subject: "Physics",
+        question: "What is the formula for kinetic energy?",
+        options: ["KE = mv²", "KE = ½ mv²", "KE = mv", "KE = ½ mv"],
+        correct: "KE = ½ mv²",
+        description: "Kinetic energy is calculated as half the mass times velocity squared (KE = ½ mv²).",
+        isBonus: false
+    },
+    // Chemistry (5)
+    {
+        subject: "Chemistry",
+        question: "What is the chemical formula for water?",
+        options: ["H₂O", "CO₂", "NaCl", "O₂"],
+        correct: "H₂O",
+        description: "Water is a compound with the formula H₂O, consisting of two hydrogen atoms and one oxygen atom.",
+        isBonus: false
+    },
+    {
+        subject: "Chemistry",
+        question: "Which gas is produced when an acid reacts with a metal?",
+        options: ["Oxygen", "Hydrogen", "Carbon dioxide", "Nitrogen"],
+        correct: "Hydrogen",
+        description: "Acids react with metals to produce hydrogen gas and a salt.",
+        isBonus: false
+    },
+    {
+        subject: "Chemistry",
+        question: "What is the pH of a neutral solution?",
+        options: ["Less than 7", "Equal to 7", "Greater than 7", "Equal to 14"],
+        correct: "Equal to 7",
+        description: "A neutral solution, like pure water, has a pH of 7.",
+        isBonus: false
+    },
+    {
+        subject: "Chemistry",
+        question: "Which element has the atomic number 6?",
+        options: ["Nitrogen", "Carbon", "Oxygen", "Boron"],
+        correct: "Carbon",
+        description: "Carbon has an atomic number of 6, indicating six protons in its nucleus.",
+        isBonus: false
+    },
+    {
+        subject: "Chemistry",
+        question: "What type of reaction is 2H₂ + O₂ → 2H₂O?",
+        options: ["Decomposition", "Synthesis", "Displacement", "Neutralization"],
+        correct: "Synthesis",
+        description: "A synthesis reaction combines reactants to form a single product, like water formation.",
+        isBonus: false
+    },
+    // Biology (5)
+    {
+        subject: "Biology",
+        question: "What is the powerhouse of the cell?",
+        options: ["Nucleus", "Mitochondria", "Ribosome", "Golgi body"],
+        correct: "Mitochondria",
+        description: "Mitochondria produce ATP, the cell’s energy currency, through cellular respiration.",
+        isBonus: false
+    },
+    {
+        subject: "Biology",
+        question: "Which gas do plants release during photosynthesis?",
+        options: ["Carbon dioxide", "Oxygen", "Nitrogen", "Hydrogen"],
+        correct: "Oxygen",
+        description: "Plants release oxygen as a byproduct of photosynthesis, using sunlight to convert CO₂ and water.",
+        isBonus: false
+    },
+    {
+        subject: "Biology",
+        question: "What is the largest organ in the human body?",
+        options: ["Liver", "Skin", "Heart", "Brain"],
+        correct: "Skin",
+        description: "The skin is the largest organ, protecting the body and regulating temperature.",
+        isBonus: false
+    },
+    {
+        subject: "Biology",
+        question: "What is the basic unit of life?",
+        options: ["Tissue", "Organ", "Cell", "System"],
+        correct: "Cell",
+        description: "The cell is the smallest unit of life, performing all essential functions.",
+        isBonus: false
+    },
+    {
+        subject: "Biology",
+        question: "Which organism is a producer in a food chain?",
+        options: ["Lion", "Grass", "Hawk", "Snake"],
+        correct: "Grass",
+        description: "Producers, like grass, make their own food through photosynthesis.",
+        isBonus: false
+    },
+    // English (8)
+    {
+        subject: "English",
+        question: "What is the synonym of 'happy'?",
+        options: ["Sad", "Joyful", "Angry", "Tired"],
+        correct: "Joyful",
+        description: "A synonym of 'happy' is 'joyful,' meaning full of joy or delight.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "Which sentence is grammatically correct?",
+        options: ["She don’t like to read.", "She doesn’t like to read.", "She not like to read.", "She liking to read."],
+        correct: "She doesn’t like to read.",
+        description: "The correct form uses 'doesn’t' for third-person singular in the negative.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "What is the antonym of 'big'?",
+        options: ["Large", "Small", "Huge", "Great"],
+        correct: "Small",
+        description: "An antonym of 'big' is 'small,' indicating a lesser size.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "What is the plural form of 'child'?",
+        options: ["Childs", "Children", "Childes", "Childrens"],
+        correct: "Children",
+        description: "The plural of 'child' is 'children,' an irregular plural form.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "Which word is a noun?",
+        options: ["Run", "Quickly", "Book", "Fast"],
+        correct: "Book",
+        description: "A noun, like 'book,' names a person, place, or thing.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "What is the past tense of 'go'?",
+        options: ["Goed", "Gone", "Went", "Going"],
+        correct: "Went",
+        description: "The past tense of 'go' is 'went,' an irregular verb form.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "Which is a correctly punctuated sentence?",
+        options: ["I have two cats, they are fluffy.", "I have two cats they are fluffy.", "I have two cats; they are fluffy.", "I have two cats they are fluffy"],
+        correct: "I have two cats; they are fluffy.",
+        description: "A semicolon correctly joins two independent clauses.",
+        isBonus: false
+    },
+    {
+        subject: "English",
+        question: "What does 'metaphor' mean in literature?",
+        options: ["A direct comparison", "A rhyme scheme", "A type of verb", "A repeated sound"],
+        correct: "A direct comparison",
+        description: "A metaphor compares two unlike things directly, e.g., 'Time is a thief.'",
+        isBonus: false
+    },
+    // Mathematics (7)
+    {
+        subject: "Mathematics",
+        question: "What is the solution to the equation 2x + 3 = 7?",
+        options: ["x = 1", "x = 2", "x = 3", "x = 4"],
+        correct: "x = 2",
+        description: "Solving 2x + 3 = 7: Subtract 3 (2x = 4), then divide by 2 (x = 2).",
+        isBonus: false
+    },
+    {
+        subject: "Mathematics",
+        question: "What is the area of a triangle with base 6 cm and height 4 cm?",
+        options: ["12 cm²", "24 cm²", "10 cm²", "18 cm²"],
+        correct: "12 cm²",
+        description: "The area of a triangle is (1/2) × base × height = (1/2) × 6 × 4 = 12 cm².",
+        isBonus: false
+    },
+    {
+        subject: "Mathematics",
+        question: "What is the value of sin(30°)?",
+        options: ["1/2", "√3/2", "1", "0"],
+        correct: "1/2",
+        description: "The sine of 30° is 1/2, based on the 30-60-90 triangle ratios.",
+        isBonus: false
+    },
+    {
+        subject: "Mathematics",
+        question: "What is the Pythagorean theorem?",
+        options: ["a² + b² = c²", "a² - b² = c²", "a + b = c", "a/b = c"],
+        correct: "a² + b² = c²",
+        description: "For a right triangle, a² + b² = c², where c is the hypotenuse.",
+        isBonus: false
+    },
+    {
+        subject: "Mathematics",
+        question: "What is the slope of the line y = 3x + 2?",
+        options: ["2", "3", "1", "-3"],
+        correct: "3",
+        description: "In y = mx + b, the slope m is 3.",
+        isBonus: false
+    },
+    {
+        subject: "Mathematics",
+        question: "What is the value of 2³?",
+        options: ["6", "8", "12", "16"],
+        correct: "8",
+        description: "2³ means 2 × 2 × 2 = 8.",
+        isBonus: false
+    },
+    {
+        subject: "Mathematics",
+        question: "How many sides does a hexagon have?",
+        options: ["5", "6", "7", "8"],
+        correct: "6",
+        description: "A hexagon is a polygon with six sides.",
+        isBonus: false
+    }
+];
+
+            // Utility functions
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
                 }
+                return array;
+            }
+
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            // Spin wheel logic
+            function spinWheel() {
+                if (isSpinning) return;
+                isSpinning = true;
+                elements.spinBtn.disabled = true;
+                if (soundEnabled) {
+                    spinAudio.play().catch(err => console.error("Spin sound failed:", err));
+                    clickAudio.play().catch(err => console.error("Click sound failed:", err));
+                }
+                const rand = Math.random();
+                let cumulative = 0;
+                const outcome = CONFIG.SPIN_OUTCOMES.find(o => {
+                    cumulative += o.probability;
+                    return rand < cumulative;
+                }) || CONFIG.SPIN_OUTCOMES[CONFIG.SPIN_OUTCOMES.length - 1];
+                spinOutcome = outcome.name;
+                const degrees = 360 * 5 + outcome.degrees;
+                elements.wheel.style.transform = `rotate(${degrees}deg)`;
                 setTimeout(() => {
-                    particleArray.splice(150, 50);
-                }, 1500);
-            } else {
-                currentData = shuffledQuestions[currentIndex];
-                questionText.textContent = currentData.question;
+                    elements.spinResult.textContent = `You got: ${spinOutcome}!${spinOutcome === 'No Quiz' && hasExtraSpin ? ' Spin again!' : ''}`;
+                    elements.proceedBtn.style.display = 'block';
+                    elements.proceedBtn.focus();
+                    isSpinning = false;
+                }, 4000);
             }
 
-            startCountdown();
-            optionList.innerHTML = '';
-            answerDescription.style.display = 'none';
-            answerDescription.textContent = '';
-            motivationalQuote.style.display = 'none';
-            motivationalQuote.textContent = '';
-
-            const shuffledOptions = shuffleArray([...currentData.options]);
-            const optionLabels = ['A', 'B', 'C', 'D'];
-            shuffledOptions.forEach((option, index) => {
-                const optionDiv = document.createElement('div');
-                optionDiv.classList.add('option');
-                optionDiv.textContent = `${optionLabels[index]}. ${option}`;
-                optionDiv.dataset.option = option;
-                optionDiv.addEventListener('click', () => {
-                    if (soundEnabled) {
-                        clickAudio.play().then(() => console.log("Click sound played")).catch(err => console.error("Click sound failed:", err));
-                    }
-                    optionDiv.classList.add('clicked');
-                    setTimeout(() => evaluateAnswer(option), 200);
-                });
-                optionList.appendChild(optionDiv);
-            });
-
-            updateProgressAndScore();
-            nextButton.style.display = 'none';
-            document.getElementById('fiftyFifty').disabled = !lifelines.fifty;
-            document.getElementById('audiencePoll').disabled = !lifelines.poll;
-            document.getElementById('phoneFriend').disabled = !lifelines.phone;
-
-            gsap.from(answerDescription, { opacity: 0, duration: 0.5, delay: 0.5 });
-        }
-
-        function evaluateAnswer(choice) {
-            clearInterval(countdownTimer);
-            timerDisplay.classList.remove('low');
-            timeUpBox.style.display = 'none';
-            let currentData = isBonus ? bonusQuestions[bonusCount - 1] : (isMystery ? mysteryQuestions[mysteryCount - 1] : shuffledQuestions[currentIndex]);
-            const allOptions = optionList.children;
-
-            for (let opt of allOptions) {
-                opt.style.pointerEvents = 'none';
-                opt.classList.remove('clicked');
-                if (opt.dataset.option === currentData.correct) {
-                    opt.classList.add('correct');
-                    gsap.to(opt, { scale: 1.1, duration: 0.3, yoyo: true, repeat: 1 });
-                } else if (opt.dataset.option === choice) {
-                    opt.classList.add('wrong');
-                    gsap.to(opt, { x: 10, duration: 0.1, yoyo: true, repeat: 5 });
-                }
-            }
-
-            if (choice === currentData.correct) {
-                userScore += isBonus ? 2 : 1;
-                drawParticles(true, isMystery);
-                setTimeout(() => drawParticles(false, false), 1000);
+            function proceedAfterSpin() {
                 if (soundEnabled) {
-                    correctAudio.play().then(() => console.log("Correct sound played")).catch(err => console.error("Correct sound failed:", err));
+                    clickAudio.play().catch(err => console.error("Click sound failed:", err));
                 }
-                const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-                motivationalQuote.textContent = randomQuote;
-                motivationalQuote.style.display = 'block';
-            } else {
+                if (spinOutcome === 'No Quiz' && hasExtraSpin) {
+                    hasExtraSpin = false;
+                    elements.wheel.style.transform = 'rotate(0deg)';
+                    elements.spinResult.textContent = '';
+                    elements.proceedBtn.style.display = 'none';
+                    elements.spinBtn.disabled = false;
+                    isSpinning = false;
+                    return;
+                }
+                elements.spinWheel.classList.remove('show');
+                if (spinOutcome === 'No Quiz') {
+                    resetGame();
+                    alert('Bad luck! No quiz this time. Try again!');
+                    return;
+                }
+                document.getElementById('subscribePrompt').classList.add('show');
+            }
+
+            // Reset game
+            function resetGame() {
+                playerName = '';
+                userScore = 0;
+                currentIndex = 0;
+                totalPossibleScore = 25;
+                hasExtraSpin = true;
+                isSpinning = false;
+                spinOutcome = '';
+                bonusQuestions = 0;
+                isRevisionPhase = false;
+                revisionIndex = 0;
+                revisionQuestions = [];
+                consecutiveCorrect = 0;
+                playedQuestions = [];
+                lifelines = { fifty: false, poll: false, phone: false };
+                elements.wheel.style.transform = 'rotate(0)';
+                elements.spinResult.textContent = '';
+                elements.proceedBtn.style.display = 'none';
+                elements.playerNameInput.value = '';
+                document.getElementById('namePrompt').classList.add('show');
+                document.getElementById('quizContainer').style.display = 'none';
                 if (soundEnabled) {
-                    wrongAudio.play().then(() => console.log("Wrong sound played")).catch(err => console.error("Wrong sound failed:", err));
+                    bgMusic.pause();
+                    bgMusic.currentTime = 0;
                 }
-            }
-
-            answerDescription.textContent = currentData.description;
-            answerDescription.style.display = 'block';
-            nextButton.style.display = 'block';
-            updateProgressAndScore();
-            gsap.from(answerDescription, { opacity: 0, y: 20, duration: 0.5 });
-        }
-
-        function showTimeUp() {
-            let currentData = isBonus ? bonusQuestions[bonusCount - 1] : (isMystery ? mysteryQuestions[mysteryCount - 1] : shuffledQuestions[currentIndex]);
-            const allOptions = optionList.children;
-
-            for (let opt of allOptions) {
-                opt.style.pointerEvents = 'none';
-                if (opt.dataset.option === currentData.correct) {
-                    opt.classList.add('correct');
-                    gsap.to(opt, { scale: 1.1, duration: 0.3, yoyo: true, repeat: 1 });
-                }
-            }
-
-            timeUpBox.style.display = 'block';
-            correctAnswerText.textContent = currentData.correct;
-            answerDescription.textContent = currentData.description;
-            answerDescription.style.display = 'block';
-            nextButton.style.display = 'block';
-            if (soundEnabled) {
-                wrongAudio.play().then(() => console.log("Wrong sound played (time up)")).catch(err => console.error("Wrong sound failed:", err));
-            }
-            updateProgressAndScore();
-            gsap.from(answerDescription, { opacity: 0, y: 20, duration: 0.5 });
-        }
-
-        function useFiftyFifty() {
-            if (lifelines.fifty) {
-                lifelines.fifty = false;
-                document.getElementById('fiftyFifty').disabled = true;
-                let currentData = isBonus ? bonusQuestions[bonusCount - 1] : (isMystery ? mysteryQuestions[mysteryCount - 1] : shuffledQuestions[currentIndex]);
-                const allOptions = optionList.children;
-                let wrongOptions = Array.from(allOptions).filter(opt => opt.dataset.option !== currentData.correct);
-                wrongOptions = shuffleArray(wrongOptions).slice(0, 2);
-                wrongOptions.forEach(opt => {
-                    gsap.to(opt, { opacity: 0, scale: 0, duration: 0.5 });
-                    opt.style.pointerEvents = 'none';
-                });
-            }
-        }
-
-        function useAudiencePoll() {
-            if (lifelines.poll) {
-                if (soundEnabled) {
-                    clickAudio.play().then(() => console.log("Click sound played for poll")).catch(err => console.error("Click sound failed:", err));
-                }
-                lifelines.poll = false;
-                document.getElementById('audiencePoll').disabled = true;
-                document.getElementById('pollModal').classList.add('show');
-                const ctx = document.getElementById('pollChart').getContext('2d');
-                let currentData = isBonus ? bonusQuestions[bonusCount - 1] : (isMystery ? mysteryQuestions[mysteryCount - 1] : shuffledQuestions[currentIndex]);
-                const allOptions = optionList.children;
-                const optionLabels = ['A', 'B', 'C', 'D'];
-                const displayOptions = Array.from(allOptions).map(opt => opt.dataset.option);
-                const correctIndex = displayOptions.indexOf(currentData.correct);
-                const data = displayOptions.map((_, index) => index === correctIndex ? 60 : 40 / (displayOptions.length - 1));
                 if (pollChart) {
                     pollChart.destroy();
+                    pollChart = null;
                 }
-                pollChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: optionLabels.slice(0, displayOptions.length),
-                        datasets: [{
-                            label: 'Audience Votes (%)',
-                            data: data,
-                            backgroundColor: ['#00FFFF', '#FF00FF', '#FFFF00', '#00FF00'],
-                            borderColor: ['#00CCCC', '#CC00CC', '#CCCC00', '#00CC00'],
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, max: 100, title: { display: true, text: 'Percentage', color: '#fff' } },
-                            x: { title: { display: true, text: 'Options', color: '#fff' } }
+            }
+
+            // Prompt navigation
+            function showNamePrompt() {
+                document.getElementById('rulesPrompt').classList.remove('show');
+                document.getElementById('namePrompt').classList.add('show');
+                elements.playerNameInput.focus();
+            }
+
+            function validateName() {
+                playerName = elements.playerNameInput.value.trim();
+                if (playerName.length < 4) {
+                    alert('Please enter a name with at least 4 letters.');
+                    return;
+                }
+                document.getElementById('namePrompt').classList.remove('show');
+                document.getElementById('soundPrompt').classList.add('show');
+            }
+
+            function startQuiz(enableSound) {
+                soundEnabled = enableSound;
+                if (!soundEnabled) {
+                    bgMusic.muted = true;
+                    clickAudio.muted = true;
+                    correctAudio.muted = true;
+                    wrongAudio.muted = true;
+                    victoryAudio.muted = true;
+                    spinAudio.muted = true;
+                }
+                document.getElementById('soundPrompt').classList.remove('show');
+                document.getElementById('spinWheel').classList.add('show');
+                elements.spinBtn.addEventListener('click', spinWheel, { once: true });
+                elements.spinBtn.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        spinWheel();
+                    }
+                }, { once: true });
+                elements.proceedBtn.addEventListener('click', proceedAfterSpin, { once: true });
+            }
+
+            function startQuizAfterSubscribe() {
+                if (soundEnabled) {
+                    clickAudio.play().catch(err => console.error("Click sound failed:", err));
+                    bgMusic.play().catch(err => console.error("Background music failed:", err));
+                }
+                document.getElementById('subscribePrompt').classList.remove('show');
+                bonusQuestions = spinOutcome.includes('1 Bonus Question') ? 1 : spinOutcome.includes('2 Bonus Questions') ? 2 : 0;
+                shuffledQuestions = shuffleArray([...questions.filter(q => !q.isBonus)]).slice(0, 30 - bonusQuestions);
+                if (bonusQuestions > 0) {
+                    const bonusPool = questions.filter(q => q.isBonus);
+                    const bonus = [];
+                    for (let i = 0; i < bonusQuestions; i++) {
+                        let q = bonusPool[i % bonusPool.length];
+                        bonus.push({ ...q, ...q, isBonus: true });
+                    }
+                    shuffledQuestions.push(...bonus);
+                }
+                totalPossibleScore = 30 + bonusQuestions * 3;
+                initializeQuiz();
+                displayQuestion();
+            }
+
+            // Initialize quiz UI
+            let questionText, optionList, answerDescription, motivationalQuote, timeUpBox, correctAnswerText, nextButton, timerDisplay, progressBar, progressText, scoreDisplay;
+            function initializeQuiz() {
+                document.getElementById('quizContainer').style.display = 'block';
+                quizBox.innerHTML = `
+                    <a href="https://www.youtube.com/@balenscholarship" target="_blank" class="youtube-link">YouTube: @balenscholarship</a>
+                    <div class="headline">Balen Scholarship Challenge</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Question 1/${shuffledQuestions.length}</div>
+                    <div class="score-container" id="scoreDisplay">Score: 0/${totalPossibleScore}</div>
+                    <div class="lifeline-container">
+                        <button class="lifeline-btn" id="fiftyFifty">50-50</button>
+                        <button class="lifeline-btn" id="audiencePoll">Audience Poll</button>
+                        <button class="lifeline-btn" id="phoneFriend">Phone a Friend</button>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer" id="timer">15</div>
+                    </div>
+                    <div id="question" class="question"></div>
+                    <div id="options" class="options"></div>
+                    <div class="description" id="description"></div>
+                    <div class="motivational-quote" id="motivationalQuote"></div>
+                    <div class="time-up" id="timeUp">Time Up!<br>Correct Answer: <span id="correctAnswer"></span></div>
+                    <button class="next-btn" id="nextBtn" style="display: none;">Next Question</button>
+                    <div class="modal" id="pollModal">
+                        <div class="modal-content">
+                            <canvas id="pollChart" width="400" height="200"></canvas>
+                            <button id="closePoll">Close</button>
+                        </div>
+                    </div>
+                    <div class="modal" id="phoneModal">
+                        <div class="modal-content">
+                            <p>Calling: Ganesh</p>
+                            <p id="phoneText"></p>
+                            <button id="closePhone">Close</button>
+                        </div>
+                    </div>
+                    <div class="footer">Made by Ganesh Dahal</div>
+                `;
+                questionText = document.getElementById('question');
+                optionList = document.getElementById('options');
+                answerDescription = document.getElementById('description');
+                motivationalQuote = document.getElementById('motivationalQuote');
+                timeUpBox = document.getElementById('timeUp');
+                correctAnswerText = document.getElementById('correctAnswer');
+                nextButton = document.getElementById('nextBtn');
+                timerDisplay = document.getElementById('timer');
+                progressBar = document.getElementById('progressBar');
+                progressText = document.getElementById('progressText');
+                scoreDisplay = document.getElementById('scoreDisplay');
+                nextButton.addEventListener('click', proceedToNext, { once: true });
+                document.getElementById('fiftyFifty').addEventListener('click', useFiftyFifty, { once: true });
+                document.getElementById('audiencePoll').addEventListener('click', useAudiencePoll, { once: true });
+                document.getElementById('phoneFriend').addEventListener('click', usePhoneFriend, { once: true });
+                document.getElementById('closePoll').addEventListener('click', closePoll, { once: true });
+                document.getElementById('closePhone').addEventListener('click', closePhone, { once: true });
+            }
+
+            // Lifeline functions
+            function useFiftyFifty() {
+                if (lifelines.fifty && !isRevisionPhase && !shuffledQuestions[currentIndex].isBonus) {
+                    lifelines.fifty = false;
+                    document.getElementById('fiftyFifty').disabled = true;
+                    document.getElementById('fiftyFifty').style.filter = 'blur(2px)';
+                    const currentData = shuffledQuestions[currentIndex];
+                    const allOptions = optionList.children;
+                    let wrongOptions = Array.from(allOptions).filter(opt => opt.dataset.option !== currentData.correct);
+                    wrongOptions = shuffleArray(wrongOptions).slice(0, 2);
+                    wrongOptions.forEach(opt => {
+                        gsap.to(opt, { opacity: 0, scale: 0, duration: 0.5 });
+                        opt.style.pointerEvents = 'none';
+                    });
+                }
+            }
+
+            function useAudiencePoll() {
+                if (lifelines.poll && !isRevisionPhase && !shuffledQuestions[currentIndex].isBonus) {
+                    if (soundEnabled) {
+                        clickAudio.play().catch(err => console.error("Click sound failed:", err));
+                    }
+                    lifelines.poll = false;
+                    document.getElementById('audiencePoll').disabled = true;
+                    document.getElementById('audiencePoll').style.filter = 'blur(2px)';
+                    document.getElementById('pollModal').classList.add('show');
+                    const ctx = document.getElementById('pollChart').getContext('2d');
+                    const currentData = shuffledQuestions[currentIndex];
+                    const allOptions = optionList.children;
+                    const optionLabels = ['A', 'B', 'C', 'D'];
+                    const displayOptions = Array.from(allOptions).map(opt => opt.dataset.option);
+                    const correctIndex = displayOptions.indexOf(currentData.correct);
+                    const data = displayOptions.map((_, index) => index === correctIndex ? 60 : 40 / (displayOptions.length - 1));
+                    if (pollChart) {
+                        pollChart.destroy();
+                    }
+                    pollChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: optionLabels.slice(0, displayOptions.length),
+                            datasets: [{
+                                label: 'Audience Votes (%)',
+                                data: data,
+                                backgroundColor: ['#00FFFF', '#FF00FF', '#FFFF00', '#00FF00'],
+                                borderColor: ['#00CCCC', '#CC00CC', '#CCCC00', '#00CC00'],
+                                borderWidth: 2
+                            }]
                         },
-                        plugins: {
-                            legend: { labels: { color: '#fff' } },
-                            title: { display: true, text: 'Audience Poll Results', color: '#fff', font: { size: 18 } }
-                        },
-                        animation: {
-                            duration: 2000,
-                            easing: 'easeOutBounce'
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, max: 100 },
+                                x: { title: { display: true, text: 'Options' } }
+                            },
+                            plugins: {
+                                legend: { labels: { color: '#fff' } }
+                            }
+                        }
+                    });
+                }
+            }
+
+            function usePhoneFriend() {
+                if (lifelines.phone && !isRevisionPhase && !shuffledQuestions[currentIndex].isBonus) {
+                    if (soundEnabled) {
+                        clickAudio.play().catch(err => console.error("Click sound failed:", err));
+                    }
+                    lifelines.phone = false;
+                    document.getElementById('phoneFriend').disabled = true;
+                    document.getElementById('phoneFriend').style.filter = 'blur(2px)';
+                    document.getElementById('phoneModal').classList.add('show');
+                    const currentData = shuffledQuestions[currentIndex];
+                    document.getElementById('phoneText').textContent = `Personally, I think the answer might be ${currentData.correct}.`;
+                }
+            }
+
+            // Modal close functions
+            function closePoll() {
+                document.getElementById('pollModal').classList.remove('show');
+                if (pollChart) {
+                    pollChart.destroy();
+                    pollChart = null;
+                }
+            }
+
+            function closePhone() {
+                document.getElementById('phoneModal').classList.remove('show');
+            }
+
+            // Timer and progress
+            function startCountdown() {
+                let timeLeft = timePerQuestion;
+                timerDisplay.textContent = timeLeft;
+                countdownTimer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    if (timeLeft <= 5) {
+                        timerDisplay.classList.add('low');
+                    } else {
+                        timerDisplay.classList.remove('low');
+                    }
+                    if (timeLeft <= 0) {
+                        clearInterval(countdownTimer);
+                        showTimeUp();
+                    }
+                }, 1000);
+            }
+
+            function updateProgressAndScore() {
+                if (isRevisionPhase) {
+                    progressText.textContent = `Revision Question ${revisionIndex + 1}/3`;
+                    scoreDisplay.textContent = `Score: ${userScore}/${totalPossibleScore}`;
+                } else {
+                    const progressPercentage = ((currentIndex + 1) / shuffledQuestions.length) * 100;
+                    gsap.to(progressBar, { width: progressPercentage + '%', duration: 0.8, ease: 'power2.out' });
+                    progressText.textContent = `Question ${currentIndex + 1}/${shuffledQuestions.length}`;
+                    scoreDisplay.textContent = `Score: ${userScore}/${totalPossibleScore}`;
+                    gsap.to(scoreDisplay, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1 });
+                }
+            }
+
+            function displayQuestion() {
+                clearInterval(countdownTimer);
+                timeUpBox.style.display = 'none';
+                document.getElementById('pollModal').classList.remove('show');
+                document.getElementById('phoneModal').classList.remove('show');
+                if (pollChart) {
+                    pollChart.destroy();
+                    pollChart = null;
+                }
+
+                timePerQuestion = 15;
+                questionText.classList.remove('bonus', 'revision');
+
+                let currentData;
+                if (isRevisionPhase) {
+                    currentData = revisionQuestions[revisionIndex];
+                    questionText.textContent = `[Revision] ${currentData.subject}: ${currentData.question}`;
+                    questionText.classList.add('revision');
+                } else {
+                    currentData = shuffledQuestions[currentIndex];
+                    questionText.textContent = currentData.isBonus ? `[Bonus] ${currentData.subject}: ${currentData.question}` : `[${currentData.subject}] ${currentData.question}`;
+                    if (currentData.isBonus) {
+                        questionText.classList.add('bonus');
+                    }
+                }
+
+                startCountdown();
+                optionList.innerHTML = '';
+                answerDescription.style.display = 'none';
+                answerDescription.textContent = '';
+                motivationalQuote.style.display = 'none';
+                motivationalQuote.textContent = '';
+
+                const shuffledOptions = shuffleArray([...currentData.options]);
+                const optionLabels = ['A', 'B', 'C', 'D'];
+                shuffledOptions.forEach((option, index) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.classList.add('option');
+                    optionDiv.textContent = `${optionLabels[index]}. ${option}`;
+                    optionDiv.dataset.option = option;
+                    optionDiv.setAttribute('tabindex', '0');
+                    optionDiv.setAttribute('aria-label', `Option ${optionLabels[index]}: ${option}`);
+                    const debouncedEvaluate = debounce(() => {
+                        if (soundEnabled) {
+                            clickAudio.play().catch(err => console.error("Click sound failed:", err));
+                        }
+                        optionDiv.classList.add('clicked');
+                        setTimeout(() => evaluateAnswer(option), 200);
+                    }, 200);
+                    optionDiv.addEventListener('click', debouncedEvaluate, { once: true });
+                    optionDiv.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            debouncedEvaluate();
+                        }
+                    }, { once: true });
+                    optionList.appendChild(optionDiv);
+                });
+
+                updateProgressAndScore();
+                nextButton.style.display = 'none';
+                // Enable lifelines only for regular questions
+                lifelines = { fifty: true, poll: true, phone: true };
+                document.getElementById('fiftyFifty').disabled = (currentData.isBonus || isRevisionPhase);
+                document.getElementById('audiencePoll').disabled = (currentData.isBonus || isRevisionPhase);
+                document.getElementById('phoneFriend').disabled = (currentData.isBonus || isRevisionPhase);
+            }
+
+            // Evaluate answer
+            function evaluateAnswer(choice) {
+                clearInterval(countdownTimer);
+                timerDisplay.classList.remove('low');
+                timeUpBox.style.display = 'none';
+                const currentData = isRevisionPhase ? revisionQuestions[revisionIndex] : shuffledQuestions[currentIndex];
+                const allOptions = optionList.children;
+
+                for (let opt of allOptions) {
+                    opt.style.pointerEvents = 'none';
+                    opt.classList.remove('clicked');
+                    if (opt.dataset.option === currentData.correct) {
+                        opt.classList.add('correct');
+                        gsap.to(opt, { scale: 1.1, duration: 0.3, yoyo: true, repeat: 1 });
+                    } else if (opt.dataset.option === choice) {
+                        opt.classList.add('wrong');
+                        gsap.to(opt, { x: 10, duration: 0.1, yoyo: true, repeat: 5 });
+                    }
+                }
+
+                if (choice === currentData.correct) {
+                    if (!isRevisionPhase) {
+                        userScore += currentData.isBonus ? 3 : 1;
+                        playedQuestions.push(currentData);
+                    }
+                    consecutiveCorrect++;
+                    drawParticles(true);
+                    setTimeout(() => drawParticles(false), 1000);
+                    if (soundEnabled) {
+                        correctAudio.play().catch(err => console.error("Correct sound failed:", err));
+                    }
+                    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+                    motivationalQuote.textContent = randomQuote;
+                    motivationalQuote.style.display = 'block';
+                } else {
+                    consecutiveCorrect = 0;
+                    if (soundEnabled) {
+                        wrongAudio.play().catch(err => console.error("Wrong sound:", err));
+                    }
+                }
+
+                answerDescription.textContent = currentData.description;
+                answerDescription.style.display = 'block';
+                nextButton.style.display = 'block';
+                nextButton.addEventListener('click', proceedToNext, { once: true });
+                updateProgressAndScore();
+            }
+
+            // Time up handler
+            function showTimeUp() {
+                const currentData = isRevisionPhase ? revisionQuestions[revisionIndex] : shuffledQuestions[currentIndex];
+                const allOptions = optionList.children;
+
+                for (let opt of allOptions) {
+                    opt.style.pointerEvents = 'none';
+                    if (opt.dataset.option === currentData.correct) {
+                        opt.classList.add('correct');
+                        gsap.to(opt, { scale: 1.1, duration: 0.3, yoyo: true, repeat: 1 });
+                    }
+                }
+
+                timeUpBox.textContent = `Time Up! Correct Answer: ${currentData.correct}`;
+                timeUpBox.style.display = 'block';
+                answerDescription.textContent = currentData.description;
+                answerDescription.style.display = 'block';
+                nextButton.style.display = 'block';
+                nextButton.addEventListener('click', proceedToNext, { once: true });
+                if (soundEnabled) {
+                    wrongAudio.play().catch(err => console.error("Wrong sound:", err));
+                }
+                consecutiveCorrect = 0;
+            }
+
+            // Mid-quiz prompt
+            function showMidQuizPrompt() {
+                quizBox.innerHTML = `
+                    <a href="https://www.youtube.com/@balenscholarship" target="_blank" class="youtube-link">YouTube: @balenscholarship</a>
+                    <div class="headline">Loving the Balen Scholarship Challenge, ${playerName}?</div>
+                    <div class="score-container">Current Score: ${userScore}/${totalPossibleScore}</div>
+                    <div class="subscribe-container">
+                        <p>Subscribe to our channel for more epic quizzes!</p>
+                        <a href="https://youtu.be/zBPKgdviVPY?si=mNFPEXcA13T_p8Tb" class="subscribe-link" target="_blank">Click Here</a>
+                    </div>
+                    <button class="next-btn" id="continueBtn">Continue Quiz</button>
+                    <div class="footer">Made by Ganesh Dahal</div>
+                `;
+                document.getElementById('continueBtn').addEventListener('click', resumeQuiz, { once: true });
+            }
+
+            function resumeQuiz() {
+                initializeQuiz();
+                displayQuestion();
+            }
+
+            // Revision phase setup
+            function selectRevisionQuestions() {
+                revisionQuestions = [];
+                const availableQuestions = playedQuestions.length >= 3 ? shuffleArray([...playedQuestions]).slice(0, 3) : shuffleArray([...playedQuestions]);
+                for (let i = 0; i < 3; i++) {
+                    if (availableQuestions.length === 0) break;
+                    revisionQuestions.push({ ...availableQuestions[i % availableQuestions.length], isRevision: true });
+                }
+                revisionIndex = 0;
+                isRevisionPhase = true;
+                consecutiveCorrect = 0;
+            }
+
+            function getNextRevisionQuestion() {
+                const availableQuestions = playedQuestions.filter(q => !revisionQuestions.some(r => r.question === q.question));
+                if (availableQuestions.length === 0) return null;
+                const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+                return { ...availableQuestions[randomIndex], isRevision: true };
+            }
+
+            // Proceed to next question
+            function proceedToNext() {
+                if (isRevisionPhase) {
+                    revisionIndex++;
+                    if (consecutiveCorrect >= 2) {
+                        isRevisionPhase = false;
+                        displayResults();
+                    } else if (revisionIndex < revisionQuestions.length) {
+                        quizBox.style.animation = 'none';
+                        void quizBox.offsetWidth;
+                        quizBox.style.animation = 'slideIn 1s ease';
+                        displayQuestion();
+                    } else {
+                        const newQuestion = getNextRevisionQuestion();
+                        if (newQuestion) {
+                            revisionQuestions.push(newQuestion);
+                            quizBox.style.animation = 'none';
+                            void quizBox.offsetWidth;
+                            quizBox.style.animation = 'slideIn 1s ease';
+                            displayQuestion();
+                        } else {
+                            isRevisionPhase = false;
+                            displayResults();
                         }
                     }
-                });
-            }
-        }
-
-        function usePhoneFriend() {
-            if (lifelines.phone) {
-                if (soundEnabled) {
-                    clickAudio.play().then(() => console.log("Click sound played for phone")).catch(err => console.error("Click sound failed:", err));
+                } else {
+                    currentIndex++;
+                    if (currentIndex === halfwayPoint) {
+                        showMidQuizPrompt();
+                    } else if (currentIndex < shuffledQuestions.length) {
+                        quizBox.style.animation = 'none';
+                        void quizBox.offsetWidth;
+                        quizBox.style.animation = 'slideIn 1s ease';
+                        displayQuestion();
+                    } else {
+                        selectRevisionQuestions();
+                        quizBox.style.animation = 'none';
+                        void quizBox.offsetWidth;
+                        quizBox.style.animation = 'slideIn 1s ease';
+                        displayQuestion();
+                    }
                 }
-                lifelines.phone = false;
-                document.getElementById('phoneFriend').disabled = true;
-                document.getElementById('phoneModal').classList.add('show');
-                let currentData = isBonus ? bonusQuestions[bonusCount - 1] : (isMystery ? mysteryQuestions[mysteryCount - 1] : shuffledQuestions[currentIndex]);
-                document.getElementById('phoneText').textContent = `Hmm… I think the answer might be ${currentData.correct}.`;
-                gsap.to('#phoneText', { scale: 1.1, duration: 0.5, yoyo: true, repeat: 1 });
             }
-        }
 
-        function showMidQuizPrompt() {
-            quizBox.innerHTML = `
-                <a href="https://www.youtube.com/@learnperfectly1" target="_blank" class="youtube-link">YouTube: @learnperfectly1</a>
-                <div class="headline">Loving the Grade 10 Challenge, ${playerName}?</div>
-                <div class="score-container">Current Score: ${userScore}/34</div>
-                <div class="subscribe-prompt">
-                    Subscribe to our channel for more epic quizzes!<br>
-                    Watch this video: <a href="https://youtu.be/pWgTgeGkcFs?si=n182UB-E20LvMZ9h" target="_blank" class="subscribe-link">Click Here</a>
-                </div>
-                <button class="next-btn" id="continueBtn">Continue Quiz</button>
-            `;
-            const continueButton = document.getElementById('continueBtn');
-            continueButton.addEventListener('click', resumeQuiz);
-        }
-
-        function resumeQuiz() {
-            quizBox.innerHTML = `
-                <a href="https://www.youtube.com/@learnperfectly1" target="_blank" class="youtube-link">YouTube: @learnperfectly1</a>
-                <div class="headline">LEARN IT - Grade 10 Challenge</div>
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                <div class="progress-text" id="progressText">Question ${currentIndex + 1}/${shuffledQuestions.length}</div>
-                <div class="score-container" id="scoreDisplay">Score: ${userScore}/34</div>
-                <div class="lifeline-container">
-                    <button class="lifeline-btn" id="fiftyFifty">50-50</button>
-                    <button class="lifeline-btn" id="audiencePoll">Audience Poll</button>
-                    <button class="lifeline-btn" id="phoneFriend">Phone a Friend</button>
-                </div>
-                <div class="timer-container">
-                    <div class="timer" id="timer">15</div>
-                </div>
-                <div class="question" id="question"></div>
-                <div class="options" id="options"></div>
-                <div class="description" id="description"></div>
-                <div class="motivational-quote" id="motivationalQuote"></div>
-                <div class="time-up" id="timeUp">Time Up!<br>Correct Answer: <span id="correctAnswer"></span></div>
-                <button class="next-btn" id="nextBtn" style="display: none;">Next Question</button>
-                <div class="modal" id="pollModal">
-                    <div class="modal-content">
-                        <canvas id="pollChart" width="400" height="200"></canvas>
-                        <button id="closePoll">Close</button>
-                    </div>
-                </div>
-                <div class="modal" id="phoneModal">
-                    <div class="modal-content">
-                        <p>Calling: Ganesh</p>
-                        <p id="phoneText"></p>
-                        <button id="closePhone">Close</button>
-                    </div>
-                </div>
-            `;
-            initializeQuiz();
-            displayQuestion();
-        }
-
-        function proceedToNext() {
-            currentIndex++;
-            if (currentIndex === halfwayPoint) {
-                showMidQuizPrompt();
-            } else if (currentIndex < shuffledQuestions.length) {
-                quizBox.style.animation = 'none';
-                void quizBox.offsetWidth;
-                quizBox.style.animation = 'slideIn 1s ease';
-                displayQuestion();
-            } else {
-                displayResults();
+            // Display results
+            function displayResults() {
+                if (soundEnabled && consecutiveCorrect >= 2) {
+                    victoryAudio.play().catch(err => console.error("Victory sound failed:", err));
+                }
+                const isWinner = consecutiveCorrect >= 2;
+                quizBox.innerHTML = `
+                    <a href="https://www.youtube.com/@balenscholarship" target="_blank" class="youtube-link">YouTube: @balenscholarship</a>
+                    <div class="headline">${isWinner ? 'Congratulations' : 'Nice Try'}, ${playerName}!</div>
+                    ${isWinner ? `<div class="result">Your Score: ${userScore}/${totalPossibleScore} (${((userScore / totalPossibleScore) * 100).toFixed(2)}%)</div>` : ''}
+                    <div class="congrats-message">${isWinner ? 'You passed the revision phase! Claim your scholarship!' : 'You didn’t pass the revision phase. Try again!'}</div>
+                    <div class="quote">"Knowledge is power. Keep learning!"</div>
+                    <a href="https://ganeshdahal-hue.github.io/todayquiz/" class="play-another-btn" target="_blank">Play Another</a>
+                    <a href="https://web.facebook.com/profile.php?id=61575889414561" class="facebook-btn" target="_blank">Share on Facebook</a>
+                    <div class="footer">Made by Ganesh Dahal</div>
+                `;
+                if (isWinner) {
+                    confetti({
+                        particleCount: 200,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
             }
-        }
 
-        function getCongratsMessage(score, total) {
-            if (score <= 12) {
-                return `Keep exploring, ${playerName}! Your score of ${score}/${total} shows you're sparking curiosity. Try again to master science, math, and English!`;
-            } else if (score <= 20) {
-                return `Great work, ${playerName}! Scoring ${score}/${total} is solid. Your skills in science, math, and English are shining!`;
-            } else if (score <= 28) {
-                return `Fantastic job, ${playerName}! Your score of ${score}/${total} is stellar. You're excelling across subjects!`;
-            } else {
-                return `You’re a Grade 10 superstar, ${playerName}! An incredible ${score}/${total}—you’ve conquered science, math, and English!`;
+            // Share on Facebook
+            function shareOnFacebook() {
+                const url = encodeURIComponent('https://ganeshdahal-hue.github.io/todayquiz/');
+                const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                window.open(shareUrl, '_blank');
             }
-        }
 
-        function displayResults() {
-            const congratsMessage = getCongratsMessage(userScore, 34);
-            quizBox.innerHTML = `
-                <a href="https://www.youtube.com/@learnperfectly1" target="_blank" class="youtube-link">YouTube: @learnperfectly1</a>
-                <div class="headline">Congratulations, ${playerName}!</div>
-                <div class="result">Your score: ${userScore} out of 34${userScore > 30 ? ' <span style="color: #FFD700">(+Bonus)</span>' : ''}</div>
-                <div class="congrats-message">${congratsMessage}</div>
-                <div class="quote">"Unlock knowledge—join us for more!"</div>
-                <a href="https://www.youtube.com/@learnperfectly1" target="_blank" class="subscribe-btn">Subscribe on YouTube</a>
-                <a href="https://ganeshdahal-hue.github.io/english-quizzz/" target="_blank" class="play-another-btn">Play Another Quiz</a>
-                <a href="https://www.facebook.com/ganesh.dahal.627352" target="_blank" class="facebook-btn">Follow on Facebook</a>
-            `;
-            confetti({
-                particleCount: 500,
-                spread: 150,
-                origin: { y: 0.6 },
-                colors: ['#ff00ff', '#00ffff', '#ffcc00', '#00ff00', '#ff3333'],
-                duration: 5000
-            });
-            for (let i = 0; i < 15; i++) {
-                particleArray.push({
-                    x: particleCanvas.width / 2,
-                    y: particleCanvas.height / 2,
-                    radius: Math.random() * 5 + 2,
-                    speedX: Math.random() * 10 - 5,
-                    speedY: Math.random() * 10 - 5,
-                    color: '#00ffff'
-                });
-            }
+            // Show rules after intro
             setTimeout(() => {
-                particleArray.splice(150, 15);
-            }, 3000);
-            if (soundEnabled) {
-                bgMusic.pause();
-                victoryAudio.play().then(() => console.log("Victory sound played")).catch(err => console.error("Victory sound failed:", err));
-            }
-        }
-    </script>
+                document.getElementById('rulesPrompt').classList.add('show');
+            }, 4500);
+        </script>
+    </div>
 </body>
 </html>
